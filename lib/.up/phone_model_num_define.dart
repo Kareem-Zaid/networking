@@ -3,9 +3,11 @@ class Phone {
   String name;
   String? color;
   String? capacity;
-  double? price;
+  // double? price;
+  String? price;
   String? generation;
-  int? screenSize;
+  // int? screenSize;
+  String? screenSize;
   Map<dynamic, dynamic> additionalData; // To store any additional fields
 
   Phone({

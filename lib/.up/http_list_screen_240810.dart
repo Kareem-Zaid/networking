@@ -14,9 +14,8 @@ class HttpListScreen extends StatefulWidget {
 }
 
 class _HttpListScreenState extends State<HttpListScreen> {
-  // This has to be here; in stateless part it's immutable, and inside build method added items are not reflected.
-  List<String> objectIds = [
-    'ff808181913d565501913dca3e9500a8',
+  // todo: Update the list on posting a new phone
+  static const List<String> objectIds = [
     'ff808181912a2b8801913018747d0b3b',
   ];
 
@@ -24,16 +23,16 @@ class _HttpListScreenState extends State<HttpListScreen> {
     List<Future<Phone>> phoneFutures = [];
     for (var id in objectIds) {
       phoneFutures.add(HttpApiClient.getPhoneById(id));
+      debugPrint('id: $id');
+      debugPrint('phones: $phoneFutures');
     }
-    var fixedPhoneFutures = await HttpApiClient.getAllPhones();
-    phoneFutures.addAll(fixedPhoneFutures.map((item) => Future.value(item)));
+    var tempPhoneFutures = await HttpApiClient.getAllPhones();
+    phoneFutures.addAll(tempPhoneFutures.map((item) => Future.value(item)));
     return Future.wait(phoneFutures);
   }
 
-// late Phone phone;
+  late Phone phone;
 // phone = Phone(id: 'id', name: 'name', color: 'color', capacity: 'capacity');
-
-  void addObjectId(String newId) => setState(() => objectIds.add(newId));
 
   @override
   Widget build(BuildContext context) {
@@ -42,34 +41,23 @@ class _HttpListScreenState extends State<HttpListScreen> {
         tooltip: 'New Entry',
         child: const Icon(Icons.add),
         onPressed: () => showModalBottomSheet(
-          isScrollControlled: true,
           context: context,
-          builder: (c) => SizedBox(
-            height: MediaQuery.of(context).size.height * .7,
-            child: HttpEntryScreen(
-              // phone: phone, // "phone" is not accessible here
-              onSaved: (newPhoneId) => addObjectId(newPhoneId),
-            ),
+          builder: (c) => HttpEntryScreen(
+            phone: Phone(
+                id: 'New Phone ID',
+                name: 'New Phone Name',
+                color: 'New Phone Color',
+                capacity: 'New Phone Capacity',
+                additionalData: {}),
           ),
         ),
       ),
-      appBar: AppBar(
-        title: const Text('HTTP List'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            // onPressed: () => setState(() => HttpApiClient.getAllPhones),
-            onPressed: () => setState(() => HttpApiClient.getAllPhones),
-            icon: const Icon(Icons.refresh),
-          )
-        ],
-      ),
+      appBar: AppBar(title: const Text('HTTP List')),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: FutureBuilder(
           future: getPhones(),
           builder: (c, snapshot) {
-            debugPrint(objectIds.toString());
             if (snapshot.hasData) {
               return ListView.builder(
                 itemCount: snapshot.data!.length,
@@ -83,27 +71,15 @@ class _HttpListScreenState extends State<HttpListScreen> {
                       title: Text(phone.name),
                       subtitle: Text('${phone.color}, ${phone.capacity}'),
                       trailing: InkWell(
-                        // onHover: (value) => Text('Modify'),
-                        customBorder: const CircleBorder(),
+                        child: const Icon(Icons.edit),
                         onTap: () => showModalBottomSheet(
                           context: context,
-                          builder: (ccc) => HttpEntryScreen(
-                            phone: phone,
-                            // onSaved: (String newPhoneId) {},
-                          ),
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(Icons.edit),
+                          builder: (ccc) => HttpEntryScreen(phone: phone),
                         ),
                       ),
                       // todo: Info screen using get request instead of passing data from here
-                      onTap: () {
-                        final phFuture = HttpApiClient.getPhoneById(phone.id);
-                        Navigator.of(cc).push(MaterialPageRoute(
-                            builder: (ccc) =>
-                                HttpDetailsScreen(phoneFuture: phFuture)));
-                      },
+                      onTap: () => Navigator.of(cc).push(MaterialPageRoute(
+                          builder: (ccc) => HttpDetailsScreen(phone: phone))),
                     ),
                   );
                 },

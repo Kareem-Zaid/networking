@@ -3,9 +3,11 @@ class Phone {
   String name;
   String? color;
   String? capacity;
-  double? price;
+  // double? price;
+  String? price;
   String? generation;
-  int? screenSize;
+  // int? screenSize;
+  String? screenSize;
   Map<dynamic, dynamic> additionalData; // To store any additional fields
 
   Phone({
@@ -49,15 +51,9 @@ class Phone {
       name: json['name'],
       color: getValue(data, ['color', 'Color']),
       capacity: getValue(data, ['capacity', 'Capacity']),
-      price: data['price'] is double
-          ? data['price']
-          : (data['price'] as num?)?.toDouble(),
+      price: data['price'],
       generation: getValue(data, ['generation', 'Generation']),
-      screenSize: data['screen size'] is int
-          ? data['screen size']
-          : (data['screen size'] is double
-              ? (data['screen size'] as double).toInt()
-              : null),
+      screenSize: data['screen size'],
       additionalData: collectAdditionalData(data, [
         'color',
         'Color',

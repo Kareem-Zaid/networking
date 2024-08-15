@@ -11,7 +11,7 @@ class HttpApiClient {
     final byIdPhone = await http.get(Uri.parse(objectUri));
     if (byIdPhone.statusCode == 200) {
       debugPrint('Phone body: ${byIdPhone.body}');
-      // debugPrint('Decoded phone body: ${json.decode(byIdPhone.body)}');
+      debugPrint('Decoded phone body: ${json.decode(byIdPhone.body)}');
       return Phone.fromJson(json.decode(byIdPhone.body));
     } else {
       throw Exception('Failed to get entry by ID');
@@ -22,7 +22,7 @@ class HttpApiClient {
     // debugPrint('Method started');
     String objectUri = baseUri;
     final response = await http.get(Uri.parse(objectUri));
-    debugPrint('All phones after awaiting request: ${response.body}');
+    debugPrint('After awaiting request: ${response.body}');
     if (response.statusCode == 200) {
       // debugPrint('If true started');
       final parsed = json.decode(response.body).cast<Map<String, dynamic>>();
@@ -33,35 +33,34 @@ class HttpApiClient {
     }
   }
 
-  static Future<Phone> sendPhone(Phone userInput) async {
+  static Future<Phone> sendPhone(Map<String, dynamic> userInput) async {
     final response = await http.post(
       Uri.parse(baseUri),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode(userInput.toJsonMap()),
+      body: json.encode(userInput),
     );
-    debugPrint('Sent phone toMap: ${userInput.toJsonMap()}');
     if (response.statusCode == 200) {
       debugPrint('Sent phone body: ${response.body}');
       // HttpListScreen.objectIds
       //     .add(Phone.fromJson(jsonDecode(response.body)).id);
       return Phone.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Post exception/status is: ${response.statusCode}');
+      throw Exception('Exception/Status is: ${response.statusCode}');
     }
   }
 
-  static Future<Phone> modifyPhone(Phone userInput) async {
+  static Future<Phone> modifyPhone(Map<String, dynamic> userInput) async {
     final response = await http.put(
       Uri.parse(baseUri), // Add identifier
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(userInput.toJsonMap()),
+      body: jsonEncode(userInput),
       // body: json.encode(phoneToPhone),
     );
     if (response.statusCode == 200) {
       debugPrint('Printed sent phone body: ${response.body}');
       return Phone.fromJson(json.decode(response.body));
     } else {
-      throw Exception('Put exception/status is: ${response.statusCode}');
+      throw Exception('Exception/Status is: ${response.statusCode}');
     }
   }
 }
