@@ -62,9 +62,6 @@ class HttpApiClient {
     if (response.statusCode == 200) {
       debugPrint('Replaced phone body: ${response.body}');
       return Phone.fromJson(json.decode(response.body));
-      // return response;
-      // If you don't need to work with the updated entry data, returning the raw response might be sufficient.
-      // https://chatgpt.com/c/1a609c7d-b45e-46eb-aa11-80da5ae32702
     } else {
       throw Exception('Put exception/status is: ${response.statusCode}');
     }
@@ -76,54 +73,71 @@ class HttpApiClient {
       required Map<String, dynamic> originalData}) async {
     // debugPrint('Original data ID: ${originalData['id']}');
     String objectUri = '$baseUri/${originalData['id']}';
-
     Map<String, dynamic> updatedData = {};
 
-    userInput.toJsonMap().forEach((key, value) {
-      if (value is Map) {
-        // Handle nested maps like 'data'
-        value.forEach((nestedKey, nestedValue) {
-          if (originalData[key] is Map &&
-              originalData[key][nestedKey] != nestedValue &&
-              nestedValue != null) {
-            debugPrint('New nested value: $nestedValue');
-            // Ensure nested values go under the correct parent key in updatedData
-            updatedData[key] = updatedData[key] ?? {};
-            updatedData[key][nestedKey] = nestedValue;
+    void updateData(Map<String, dynamic> originalData,
+        Map<String, dynamic> userInput, Map<String, dynamic> updatedData) {
+      // Initialize updatedData to ensure it starts fresh
+      updatedData.clear();
+
+      userInput.forEach((key, value) {
+        if (value is Map) {
+          // Handle nested maps like 'data'
+          if (originalData[key] is Map) {
+            updatedData[key] = {}; // Initialize if not present
+
+            value.forEach((nestedKey, nestedValue) {
+              if (originalData[key][nestedKey] != nestedValue) {
+                // Only add or update if value is non-null and non-empty
+                if (nestedValue != null && nestedValue.toString().isNotEmpty) {
+                  debugPrint('New nested value: $nestedValue');
+                  updatedData[key][nestedKey] = nestedValue;
+                }
+              }
+            });
+
+            // Remove any keys that are null in the userInput but were present in the originalData
+            (originalData[key] as Map).forEach((nestedKey, _) {
+              if (value[nestedKey] == null) {
+                updatedData[key]?.remove(nestedKey);
+              }
+            });
+
+            // Only add the nested map to updatedData if it's not empty
+            if (updatedData[key]?.isEmpty ?? true) {
+              updatedData.remove(key);
+            }
           }
-        });
-      } else {
-        // Handle top-level fields directly
-        if (value != originalData[key] && value != null && value != '') {
-          debugPrint('New value: $value');
-          updatedData[key] = value;
+        } else {
+          // Handle top-level fields directly
+          if (value != originalData[key] &&
+              value != null &&
+              value.toString().isNotEmpty) {
+            debugPrint('New value: $value');
+            updatedData[key] = value;
+          } else if (originalData[key] != null && value == null) {
+            // Remove the field if it's now null but was not originally
+            updatedData.remove(key);
+          }
         }
-      }
-    });
+      });
+    }
+
+    updateData(originalData, userInput.toJsonMap(), updatedData);
+    // https://chatgpt.com/c/fe35ea32-b8e0-4200-b291-9741295ab098
+    // if (value != originalData[key] && (value?.isNotEmpty ?? false)) {
 
     debugPrint('Updated data: $updatedData');
-
     final response = await http.patch(
       Uri.parse(objectUri),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode(userInput.toJsonMap()),
+      body: json.encode(updatedData),
     );
     if (response.statusCode == 200) {
       debugPrint('Updated phone body: ${response.body}');
       return Phone.fromJson(json.decode(response.body));
     } else {
       throw Exception('Patch exception/status is: ${response.statusCode}');
-    }
-  }
-
-  static Future<http.Response> deletePhone(String objectId) async {
-    String objectUri = '$baseUri/$objectId';
-    final response = await http.delete(Uri.parse(objectUri));
-    if (response.statusCode == 200) {
-      debugPrint('Deleted phone response body: ${response.body}');
-      return response;
-    } else {
-      throw Exception('Get by id exception/status is: ${response.statusCode}');
     }
   }
 }

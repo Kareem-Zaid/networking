@@ -62,9 +62,6 @@ class HttpApiClient {
     if (response.statusCode == 200) {
       debugPrint('Replaced phone body: ${response.body}');
       return Phone.fromJson(json.decode(response.body));
-      // return response;
-      // If you don't need to work with the updated entry data, returning the raw response might be sufficient.
-      // https://chatgpt.com/c/1a609c7d-b45e-46eb-aa11-80da5ae32702
     } else {
       throw Exception('Put exception/status is: ${response.statusCode}');
     }
@@ -77,53 +74,50 @@ class HttpApiClient {
     // debugPrint('Original data ID: ${originalData['id']}');
     String objectUri = '$baseUri/${originalData['id']}';
 
+    // Start with a map for the main fields like 'id' and 'name'
     Map<String, dynamic> updatedData = {};
 
-    userInput.toJsonMap().forEach((key, value) {
-      if (value is Map) {
-        // Handle nested maps like 'data'
-        value.forEach((nestedKey, nestedValue) {
-          if (originalData[key] is Map &&
-              originalData[key][nestedKey] != nestedValue &&
-              nestedValue != null) {
-            debugPrint('New nested value: $nestedValue');
-            // Ensure nested values go under the correct parent key in updatedData
-            updatedData[key] = updatedData[key] ?? {};
-            updatedData[key][nestedKey] = nestedValue;
-          }
-        });
-      } else {
-        // Handle top-level fields directly
-        if (value != originalData[key] && value != null && value != '') {
-          debugPrint('New value: $value');
-          updatedData[key] = value;
-        }
+    // Check if main fields need to be updated
+    if (originalData['id'] != userInput.id && userInput.id.isNotEmpty) {
+      updatedData['id'] = userInput.id;
+    }
+    if (originalData['name'] != userInput.name && userInput.name.isNotEmpty) {
+      updatedData['name'] = userInput.name;
+    }
+
+    // Handle the 'data' map separately
+    Map<String, dynamic> updatedDataMap = {};
+    Map<String, dynamic> originalDataMap =
+        Map<String, dynamic>.from(originalData['data'] ?? {});
+
+    // Iterate through the fields inside the 'data' map
+    Map<String, dynamic> userInputData =
+        Map<String, dynamic>.from(userInput.toJsonMap()['data'] ?? {});
+
+    userInputData.forEach((key, value) {
+      if (originalDataMap[key] != value && value != null && value != '') {
+        updatedDataMap[key] = value; // Only include changed and non-null values
       }
     });
 
-    debugPrint('Updated data: $updatedData');
+    // If updatedDataMap has any changes, include it in the final map
+    if (updatedDataMap.isNotEmpty) {
+      updatedData['data'] = updatedDataMap;
+    }
+
+    // Debug print to verify the filtered map
+    debugPrint('Filtered updated data: $updatedData');
 
     final response = await http.patch(
       Uri.parse(objectUri),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode(userInput.toJsonMap()),
+      body: json.encode(updatedData),
     );
     if (response.statusCode == 200) {
       debugPrint('Updated phone body: ${response.body}');
       return Phone.fromJson(json.decode(response.body));
     } else {
       throw Exception('Patch exception/status is: ${response.statusCode}');
-    }
-  }
-
-  static Future<http.Response> deletePhone(String objectId) async {
-    String objectUri = '$baseUri/$objectId';
-    final response = await http.delete(Uri.parse(objectUri));
-    if (response.statusCode == 200) {
-      debugPrint('Deleted phone response body: ${response.body}');
-      return response;
-    } else {
-      throw Exception('Get by id exception/status is: ${response.statusCode}');
     }
   }
 }

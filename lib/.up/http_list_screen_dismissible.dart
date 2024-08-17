@@ -94,7 +94,6 @@ class _HttpListScreenState extends State<HttpListScreen> {
                       ScaffoldMessenger.of(cc).showSnackBar(
                           SnackBar(content: Text('${phone.name} deleted')));
                     },
-                    // confirmDismiss: (direction) async => false,
                     background: Container(
                       color: Colors.red,
                       alignment: Alignment.centerLeft,
@@ -103,7 +102,6 @@ class _HttpListScreenState extends State<HttpListScreen> {
                     ),
                     child: Card(
                       child: ListTile(
-                        // leading: IconButton(onPressed: (){}, icon: const Icon(Icons.delete)),
                         title: Text(phone.name),
                         subtitle: Text(
                             '${phone.color ?? ''}${phone.capacity == null ? '' : phone.color != null ? ', ${phone.capacity}' : phone.capacity}'),

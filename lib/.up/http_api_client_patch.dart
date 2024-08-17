@@ -22,7 +22,7 @@ class HttpApiClient {
     // debugPrint('Method started');
     String objectUri = baseUri;
     final response = await http.get(Uri.parse(objectUri));
-    // debugPrint('All gotten phones body: ${response.body}');
+    debugPrint('All gotten phones body: ${response.body}');
     if (response.statusCode == 200) {
       // debugPrint('If true started');
       final parsed = json.decode(response.body).cast<Map<String, dynamic>>();
@@ -62,9 +62,6 @@ class HttpApiClient {
     if (response.statusCode == 200) {
       debugPrint('Replaced phone body: ${response.body}');
       return Phone.fromJson(json.decode(response.body));
-      // return response;
-      // If you don't need to work with the updated entry data, returning the raw response might be sufficient.
-      // https://chatgpt.com/c/1a609c7d-b45e-46eb-aa11-80da5ae32702
     } else {
       throw Exception('Put exception/status is: ${response.statusCode}');
     }
@@ -76,8 +73,26 @@ class HttpApiClient {
       required Map<String, dynamic> originalData}) async {
     // debugPrint('Original data ID: ${originalData['id']}');
     String objectUri = '$baseUri/${originalData['id']}';
-
     Map<String, dynamic> updatedData = {};
+    // userInput.toJsonMap().forEach((key, value) {
+    //   if (originalData[key] != null && value != null) {
+    //     debugPrint('New value: $value');
+    //     updatedData[key] = value;
+    //   }
+    // });
+    //     userInput.toJsonMap().values.forEach((v){if (v is Map) {
+    //        v.forEach((key, value) {
+    //         if (originalData[key] != value && value != null) {
+    //           debugPrint('New value: $value');
+    //           updatedData[key] = value;
+    //         }
+    //       });
+    //     }}).forEach((key, value) {
+    //   if (originalData[key] != value && value != null) {
+    //     debugPrint('New value: $value');
+    //     updatedData[key] = value;
+    //   }
+    // });
 
     userInput.toJsonMap().forEach((key, value) {
       if (value is Map) {
@@ -87,14 +102,12 @@ class HttpApiClient {
               originalData[key][nestedKey] != nestedValue &&
               nestedValue != null) {
             debugPrint('New nested value: $nestedValue');
-            // Ensure nested values go under the correct parent key in updatedData
-            updatedData[key] = updatedData[key] ?? {};
-            updatedData[key][nestedKey] = nestedValue;
+            updatedData[nestedKey] = nestedValue;
           }
         });
       } else {
         // Handle top-level fields directly
-        if (value != originalData[key] && value != null && value != '') {
+        if (originalData[key] != value && value != null) {
           debugPrint('New value: $value');
           updatedData[key] = value;
         }
@@ -102,28 +115,16 @@ class HttpApiClient {
     });
 
     debugPrint('Updated data: $updatedData');
-
     final response = await http.patch(
       Uri.parse(objectUri),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode(userInput.toJsonMap()),
+      body: json.encode(updatedData),
     );
     if (response.statusCode == 200) {
       debugPrint('Updated phone body: ${response.body}');
       return Phone.fromJson(json.decode(response.body));
     } else {
       throw Exception('Patch exception/status is: ${response.statusCode}');
-    }
-  }
-
-  static Future<http.Response> deletePhone(String objectId) async {
-    String objectUri = '$baseUri/$objectId';
-    final response = await http.delete(Uri.parse(objectUri));
-    if (response.statusCode == 200) {
-      debugPrint('Deleted phone response body: ${response.body}');
-      return response;
-    } else {
-      throw Exception('Get by id exception/status is: ${response.statusCode}');
     }
   }
 }
