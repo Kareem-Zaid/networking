@@ -31,17 +31,12 @@ class MyApp extends StatelessWidget {
             AppBarTheme(color: Theme.of(context).colorScheme.inversePrimary),
       ),
       home: const HomeScreen(),
-      // initialRoute: '/',
-      // routes: {
-      //   '/': (context) => const HomeScreen(),
-      // HttpSample.route: (context) => const HttpSample(),
-      // },
     );
   }
 }
 
-// v1.0.0: HTTP client example {240817}
-// v1.0.0: Dio client example
+// v1.0.0: HTTP API client request methods + UI {240817}
+// v1.0.0: Dio API client requests methods (same UI) {240819}
 // v1.0.0: Prayer Times
 // v1.0.0: Weather
 // v1.1.0: Replace null values with '' (See HttpListScreen line: 90, ListTile(subtitle: Text(...)))
@@ -53,3 +48,4 @@ class MyApp extends StatelessWidget {
 // v1.3.0: Test the results of the universal GET-POST-PUT-PATCH-DELETE API request
 // v1.4.0: Chopper client example
 // v1.4.0: Swipe then press to delete (https://chatgpt.com/c/7298bde3-8595-4c93-b8c7-dbed282aaa55)
+// v1.5.0: Chopper & GetX API client requests methods (same UI)

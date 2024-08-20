@@ -1,31 +1,35 @@
 import 'package:flutter/material.dart';
-import 'http_api_client.dart';
-import 'http_details_screen.dart';
-import 'http_entry_screen.dart';
+import 'package:networking/dio_details_screen.dart';
+import 'dio_api_client.dart';
+import 'dio_entry_screen.dart';
 import 'phone_model.dart';
 
-class HttpListScreen extends StatefulWidget {
-  const HttpListScreen({super.key});
+class DioListScreen extends StatefulWidget {
+  const DioListScreen({super.key});
 
   @override
-  State<HttpListScreen> createState() => _HttpListScreenState();
+  State<DioListScreen> createState() => _DioListScreenState();
 }
 
-class _HttpListScreenState extends State<HttpListScreen> {
+class _DioListScreenState extends State<DioListScreen> {
   // This has to be here; in stateless part it's immutable, and inside build method added items are not reflected.
   List<String> objectIds = [
     'ff808181913d565501913dca3e9500a8',
     'ff808181912a2b8801913018747d0b3b',
     'ff808181915ec67c0191604c3ec4014b',
+    'ff808181916475bf01916898acda047a',
+    // 'ff808181916475bf019168a4651a0488', // To be deleted manually // Deleted
   ];
+  // Be aware that deleting items from this list will not delete them from the server, and vice versa; and vice versa is the BIG PROBLEM, as it would cause 404 error.
+  // Another notation is that refreshing the list (see [1]) after removing deleted item from the list (see [2]) doesn't throw 404 error, but not executing [2] throws.
 
-  Future<List<Phone>> getPhones() async {
+  Future<List<Phone>> getPhoneFutures() async {
     setState(() {}); // Triggers a rebuild for the FutureBuilder
     List<Future<Phone>> phoneFutures = [];
     for (var id in objectIds) {
-      phoneFutures.add(HttpApiClient.getPhone(id));
+      phoneFutures.add(DioApiClient.getPhone(id));
     }
-    var fixedPhoneFutures = await HttpApiClient.getAllPhones();
+    var fixedPhoneFutures = await DioApiClient.getAllPhones();
     phoneFutures.addAll(fixedPhoneFutures.map((item) => Future.value(item)));
     return Future.wait(phoneFutures);
   }
@@ -39,42 +43,40 @@ class _HttpListScreenState extends State<HttpListScreen> {
       builder: (c) => SizedBox(
           height: MediaQuery.of(context).size.height * .7, child: child),
     ).then((onSubmit) => onSubmit == true ? setState(() {}) : null);
-    // Adding 'then' triggers a rebuild for the 'FutureBuilder' only after submitting, noting that removing 'if' condition causes rebuilding the state even if the user just presses the back button.
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.lightGreen.shade100,
+      backgroundColor: Colors.lightBlueAccent.shade100,
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.lightGreen.shade200,
+        backgroundColor: Colors.lightBlueAccent.shade200,
         tooltip: 'New Entry',
         child: const Icon(Icons.add),
         onPressed: () => buildBottomSheet(
           context,
-          HttpEntryScreen(onSaved: (newPhoneId) => addObjectId(newPhoneId)),
+          DioEntryScreen(onSaved: (newPhoneId) => addObjectId(newPhoneId)),
         ),
       ),
       appBar: AppBar(
-        backgroundColor: Colors.lightGreen.shade200,
-        title: const Text('HTTP List'),
+        backgroundColor: Colors.lightBlueAccent.shade200,
+        title: const Text('Dio Phone List'),
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: IconButton(
               tooltip: 'Refresh',
-              onPressed: () => getPhones(), // Assign a new future
+              onPressed: () => getPhoneFutures(), // Assign a new future [1]
               icon: const Icon(Icons.refresh),
             ),
-          )
+          ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: FutureBuilder(
-          future: getPhones(),
+          future: getPhoneFutures(),
           builder: (c, snapshot) {
-            debugPrint(objectIds.toString());
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
@@ -84,20 +86,18 @@ class _HttpListScreenState extends State<HttpListScreen> {
                 itemCount: snapshot.data!.length,
                 itemBuilder: (cc, index) {
                   final phone = snapshot.data![index];
-                  // Adding "final" here is radical for tapped item index correspondence
-                  // https://chatgpt.com/c/13520923-f948-4373-88fd-26bddebe6c4e
                   return Dismissible(
                     key: Key(phone.id),
                     direction: DismissDirection.startToEnd,
                     onDismissed: (direction) {
-                      // Remove the item from the cloud data source.
-                      HttpApiClient.deletePhone(phone.id);
-                      // Remove the item from the local list.
-                      objectIds.remove(phone.id);
-                      ScaffoldMessenger.of(cc).showSnackBar(
-                          SnackBar(content: Text('${phone.name} deleted')));
+                      DioApiClient.deletePhone(phone.id);
+                      objectIds.remove(phone.id); // [2]
+                      debugPrint(objectIds.toString());
+                      ScaffoldMessenger.of(cc).showSnackBar(SnackBar(
+                        content: Text(
+                            '${phone.name.isNotEmpty ? phone.name : 'Untitled phone'} deleted'),
+                      ));
                     },
-                    // confirmDismiss: (direction) async => false,
                     background: Container(
                       color: Colors.red,
                       alignment: Alignment.centerLeft,
@@ -106,7 +106,6 @@ class _HttpListScreenState extends State<HttpListScreen> {
                     ),
                     child: Card(
                       child: ListTile(
-                        // leading: IconButton(onPressed: (){}, icon: const Icon(Icons.delete)),
                         title: Text(phone.name),
                         subtitle: Text(
                             '${phone.color ?? ''}${phone.capacity == null ? '' : phone.color != null ? ', ${phone.capacity}' : phone.capacity}'),
@@ -118,7 +117,7 @@ class _HttpListScreenState extends State<HttpListScreen> {
                               icon: const Icon(Icons.edit),
                               onPressed: () => buildBottomSheet(
                                 context,
-                                HttpEntryScreen(phone: phone, whoRU: 'update'),
+                                DioEntryScreen(phone: phone, whoRU: 'update'),
                               ),
                             ),
                             IconButton(
@@ -126,16 +125,16 @@ class _HttpListScreenState extends State<HttpListScreen> {
                               icon: const Icon(Icons.change_circle),
                               onPressed: () => buildBottomSheet(
                                 context,
-                                HttpEntryScreen(phone: phone, whoRU: 'replace'),
+                                DioEntryScreen(phone: phone, whoRU: 'replace'),
                               ),
                             ),
                           ],
                         ),
                         onTap: () {
-                          final phFuture = HttpApiClient.getPhone(phone.id);
+                          final phFuture = DioApiClient.getPhone(phone.id);
                           Navigator.of(cc).push(MaterialPageRoute(
                               builder: (ccc) =>
-                                  HttpDetailsScreen(phoneFuture: phFuture)));
+                                  DioDetailsScreen(phoneFuture: phFuture)));
                         },
                       ),
                     ),
@@ -144,7 +143,6 @@ class _HttpListScreenState extends State<HttpListScreen> {
               );
             }
             return const Center(child: CircularProgressIndicator());
-            // Fallback for unexpected states, i.e. No data available
           },
         ),
       ),

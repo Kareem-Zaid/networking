@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:networking/phone_model.dart';
-import 'http_api_client.dart';
+import 'dio_api_client.dart';
 
-// HttpListScreen httpListScreen =  HttpListScreen();
 bool isNew = true;
 
 class CustomTextField extends StatelessWidget {
@@ -29,17 +28,17 @@ class CustomTextField extends StatelessWidget {
   }
 }
 
-class HttpEntryScreen extends StatefulWidget {
-  const HttpEntryScreen({super.key, this.phone, this.onSaved, this.whoRU});
+class DioEntryScreen extends StatefulWidget {
+  const DioEntryScreen({super.key, this.phone, this.onSaved, this.whoRU});
   final Phone? phone;
   final Function(String newPhoneId)? onSaved;
   final String? whoRU;
 
   @override
-  State<HttpEntryScreen> createState() => _HttpEntryScreenState();
+  State<DioEntryScreen> createState() => _DioEntryScreenState();
 }
 
-class _HttpEntryScreenState extends State<HttpEntryScreen> {
+class _DioEntryScreenState extends State<DioEntryScreen> {
   // Map<String, dynamic> userInput = {};
   Phone userInput = Phone(id: '', name: '', additionalData: {});
 
@@ -47,9 +46,9 @@ class _HttpEntryScreenState extends State<HttpEntryScreen> {
   Widget build(BuildContext context) {
     isNew = widget.phone == null;
     return Scaffold(
-      backgroundColor: Colors.lightGreen.shade100,
+      backgroundColor: Colors.lightBlueAccent.shade100,
       appBar: AppBar(
-        backgroundColor: Colors.lightGreen.shade200,
+        backgroundColor: Colors.lightBlueAccent.shade200,
         title: Text(
           isNew
               ? 'New Phone'
@@ -92,27 +91,41 @@ class _HttpEntryScreenState extends State<HttpEntryScreen> {
                 try {
                   if (!userInputNonEmpty) return;
                   if (isNew) {
-                    debugPrint('User Input name: ${userInput.name}');
-                    final newPhone = await HttpApiClient.sendPhone(userInput);
+                    final newPhone = await DioApiClient.sendPhone(userInput);
                     debugPrint('New phone sent with ID: ${newPhone.id}');
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content:
+                            Text('Created new phone with ID: ${newPhone.id}'),
+                      ));
+                    }
                     widget.onSaved!(newPhone.id);
                   } else if (widget.whoRU == 'replace') {
-                    debugPrint('Existing ID: ${widget.phone!.id}');
-                    final replacedPhone = await HttpApiClient.replacePhone(
-                        userInput: userInput, objectId: widget.phone!.id);
-                    debugPrint('Replaced phone: ${replacedPhone.toJsonMap()}');
+                    final replacedPhone = await DioApiClient.replacePhone(
+                        userInput, widget.phone!.id);
+                    debugPrint(
+                        'Replaced existing phone with ID: ${replacedPhone.id}');
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            'Replaced existing phone with ID: ${replacedPhone.id}'),
+                      ));
+                    }
                   } else {
-                    debugPrint('Existing ID: ${widget.phone!.id}');
-                    final updatedPhone = await HttpApiClient.updatePhone(
-                      userInput: userInput,
-                      // objectId: widget.phone!.id, // Replaced with 'originalData['id']'
-                      originalData: widget.phone!.toJsonMap(),
+                    final updatedPhone = await DioApiClient.updatePhone(
+                      userInput,
+                      widget.phone!.toJsonMap(),
                     );
-                    debugPrint('Updated phone: ${updatedPhone.toJsonMap()}');
+                    debugPrint(
+                        'Updated existing phone with ID: ${updatedPhone.id}');
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            'Updated existing phone with ID: ${updatedPhone.id}'),
+                      ));
+                    }
                   }
-                  if (context.mounted) {
-                    Navigator.of(context).pop(true);
-                  }
+                  if (context.mounted) Navigator.of(context).pop(true);
                 } catch (e) {
                   debugPrint('Failed to send phone: $e');
                 }

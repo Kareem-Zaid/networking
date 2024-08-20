@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:networking/dio_list_screen.dart';
 import 'package:networking/http_list_screen.dart';
-// import 'http_entry_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({
-    super.key,
-  });
+  const HomeScreen({super.key});
 
   static const List<Widget> screens = [
-    HttpListScreen(),
-    // const HttpEntryScreen(),
+    HttpListScreen(), // https://api.restful-api.dev/objects: 100 requests/day
+    DioListScreen(), // https://api.restful-api.dev/objects: 100 requests/day
   ];
 
   @override

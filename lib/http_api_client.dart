@@ -6,7 +6,7 @@ import 'package:networking/phone_model.dart';
 class HttpApiClient {
   static const String baseUri = 'https://api.restful-api.dev/objects';
 
-  static Future<Phone> getPhoneById(String objectId) async {
+  static Future<Phone> getPhone(String objectId) async {
     String objectUri = '$baseUri/$objectId';
     final byIdPhone = await http.get(Uri.parse(objectUri));
     if (byIdPhone.statusCode == 200) {
@@ -106,7 +106,7 @@ class HttpApiClient {
     final response = await http.patch(
       Uri.parse(objectUri),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode(userInput.toJsonMap()),
+      body: json.encode(updatedData),
     );
     if (response.statusCode == 200) {
       debugPrint('Updated phone body: ${response.body}');

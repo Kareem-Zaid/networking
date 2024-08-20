@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'phone_model.dart';
 
-class HttpDetailsScreen extends StatefulWidget {
-  const HttpDetailsScreen({super.key, required this.phoneFuture});
+class DioDetailsScreen extends StatefulWidget {
+  const DioDetailsScreen({super.key, required this.phoneFuture});
   final Future<Phone> phoneFuture;
 
   @override
-  State<HttpDetailsScreen> createState() => _HttpDetailsScreenState();
+  State<DioDetailsScreen> createState() => _DioDetailsScreenState();
 }
 
-class _HttpDetailsScreenState extends State<HttpDetailsScreen> {
+class _DioDetailsScreenState extends State<DioDetailsScreen> {
   Phone? phone;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.lightGreen.shade200,
+      backgroundColor: Colors.lightBlueAccent.shade100,
       appBar: AppBar(
-        backgroundColor: Colors.lightGreen.shade100,
+        backgroundColor: Colors.lightBlueAccent.shade200,
         title: Text(phone != null
             ? 'Info about ${phone!.name}'
             : 'Info about: loading phone name...'),
@@ -32,16 +32,11 @@ class _HttpDetailsScreenState extends State<HttpDetailsScreen> {
             } else if (snapshot.hasError) {
               return Text('${snapshot.error}');
             } else if (snapshot.hasData) {
-              // https://chatgpt.com/c/b29834a7-5bba-40cf-ad03-737cce1a197f
-              // phone = snapshot.data;
-              // WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
-              // https://chatgpt.com/share/e33d077a-0240-4f30-b5c4-a32d3868f8c6
-
-              // Only call setState if the phone variable is not yet set
+              phone = snapshot.data;
+              WidgetsBinding.instance
+                  .addPostFrameCallback((_) => setState(() {}));
               if (phone == null) {
-                // Update the phone variable and call setState
                 phone = snapshot.data;
-                // Trigger a rebuild to update the AppBar
                 Future.microtask(() => setState(() {}));
               }
               final properties = phone!.toPropertiesMap();
